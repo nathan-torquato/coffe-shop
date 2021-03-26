@@ -15,7 +15,7 @@ CORS(app)
 # db_drop_and_create_all()
 
 # ROUTES
-@app.route('/drinks')
+@app.route('/drinks', methods=['GET'])
 def get_drinks():
 	entity_list = Drink.query.all()
 	drinks = [entity.short() for entity in entity_list]
@@ -34,7 +34,7 @@ def get_drinks():
     returns status code 200 and json {"success": True, "drinks": drinks} where drinks is the list of drinks
         or appropriate status code indicating reason for failure
 '''
-@app.route('/drinks-detail')
+@app.route('/drinks-detail', methods=['GET'])
 def get_drinks_detail():
 	entity_list = Drink.query.all()
 	drinks = [entity.long() for entity in entity_list]
