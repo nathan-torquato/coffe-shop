@@ -91,20 +91,15 @@ def create_drink():
     returns status code 200 and json {"success": True, "delete": id} where id is the id of the deleted record
         or appropriate status code indicating reason for failure
 '''
-@app.route('/drinks', methods=['POST'])
-def create_drink():
-	try:
-		props = request.get_json()
-		drink = Drink(props)
-		drink.insert()
+@app.route('/drinks/<int:id>', methods=['DELETE'])
+def delete_drink(id):
+	drink = Drink.query.get_or_404(id)
+	drink.delete()
 
-		return jsonify({
-			'success': True,
-			'drinks': [drink.long()]
-		})
-
-	except:
-		abort(422)
+	return jsonify({
+		'success': True,
+		'delete': id
+	})
 
 # Error Handling
 '''
