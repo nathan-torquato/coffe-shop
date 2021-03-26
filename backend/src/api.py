@@ -3,6 +3,7 @@ from flask import Flask, request, jsonify, abort
 from sqlalchemy import exc
 import json
 from flask_cors import CORS
+from werkzeug.exceptions import HTTPException
 
 from .database.models import db_drop_and_create_all, setup_db, Drink
 from .auth.auth import AuthError, requires_auth
@@ -18,6 +19,7 @@ CORS(app)
 def get_drinks():
 	entity_list = Drink.query.all()
 	drinks = [entity.short() for entity in entity_list]
+
 	return jsonify({
 		'success': True,
 		'drinks': drinks
@@ -78,29 +80,26 @@ Example error handling for unprocessable entity
 
 @app.errorhandler(422)
 def unprocessable(error):
-    return jsonify({
-        "success": False,
-        "error": 422,
-        "message": "unprocessable"
-    }), 422
+	return jsonify({
+		"success": False,
+		"error": 422,
+		"message": "unprocessable"
+	}), 422
 
 
-'''
-@TODO implement error handlers using the @app.errorhandler(error) decorator
-    each error handler should return (with approprate messages):
-             jsonify({
-                    "success": False,
-                    "error": 404,
-                    "message": "resource not found"
-                    }), 404
-
-'''
-
-'''
-@TODO implement error handler for 404
-    error handler should conform to general task above
-'''
-
+@app.errorhandler(HTTPException)
+def handle_exception(e):
+	"""Return JSON instead of HTML for HTTP errors."""
+	# start with the correct headers and status code from the error
+	response = e.get_response()
+	# replace the body with JSON
+	response.data = json.dumps({
+		"success": False,
+		"error": e.code,
+		"message": e.description,
+	})
+	response.content_type = "application/json"
+	return response
 
 '''
 @TODO implement error handler for AuthError
