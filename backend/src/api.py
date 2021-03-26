@@ -55,18 +55,15 @@ def get_drinks_detail():
 '''
 @app.route('/drinks', methods=['POST'])
 def create_drink():
-	try:
-		props = request.get_json()
-		drink = Drink(props)
-		drink.insert()
+	props = request.get_json()
+	props['recipe'] = json.dumps(props['recipe'], separators=(',', ':'))
+	drink = Drink(props)
+	drink.insert()
 
-		return jsonify({
-			'success': True,
-			'drinks': [drink.long()]
-		}), 201
-
-	except:
-		abort(422)
+	return jsonify({
+		'success': True,
+		'drinks': [drink.long()]
+	}), 201
 
 '''
 @TODO implement endpoint
