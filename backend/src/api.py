@@ -47,15 +47,15 @@ def create_drink(payload):
 	return jsonify({
 		'success': True,
 		'drinks': [drink.long()]
-	}), 201
+	})
 
 @app.route('/drinks/<int:id>', methods=['PATCH'])
 @requires_auth('patch:drinks')
 def update_drink(payload, id):
 	props = request.get_json()
 	drink = Drink.query.get_or_404(id)
-	drink.title = props['title']
-	drink.recipe = props['recipe']
+	drink.title = props.get('title', drink.title)
+	drink.recipe = props.get('recipe', '[]')
 	drink.update()
 
 	return jsonify({
