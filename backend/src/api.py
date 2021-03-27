@@ -25,17 +25,9 @@ def get_drinks():
 		'drinks': drinks
 	})
 
-
-'''
-@TODO implement endpoint
-    GET /drinks-detail
-        it should require the 'get:drinks-detail' permission
-        it should contain the drink.long() data representation
-    returns status code 200 and json {"success": True, "drinks": drinks} where drinks is the list of drinks
-        or appropriate status code indicating reason for failure
-'''
 @app.route('/drinks-detail', methods=['GET'])
-def get_drinks_detail():
+@requires_auth('get:drinks-detail')
+def get_drinks_detail(payload):
 	entity_list = Drink.query.all()
 	drinks = [entity.long() for entity in entity_list]
 
@@ -44,17 +36,9 @@ def get_drinks_detail():
 		'drinks': drinks
 	})
 
-'''
-@TODO implement endpoint
-    POST /drinks
-        it should create a new row in the drinks table
-        it should require the 'post:drinks' permission
-        it should contain the drink.long() data representation
-    returns status code 200 and json {"success": True, "drinks": drink} where drink an array containing only the newly created drink
-        or appropriate status code indicating reason for failure
-'''
 @app.route('/drinks', methods=['POST'])
-def create_drink():
+@requires_auth('post:drinks')
+def create_drink(payload):
 	props = request.get_json()
 	props['recipe'] = json.dumps(props['recipe'], separators=(',', ':'))
 	drink = Drink(props)
@@ -65,19 +49,9 @@ def create_drink():
 		'drinks': [drink.long()]
 	}), 201
 
-'''
-@TODO implement endpoint
-    PATCH /drinks/<id>
-        where <id> is the existing model id
-        it should respond with a 404 error if <id> is not found
-        it should update the corresponding row for <id>
-        it should require the 'patch:drinks' permission
-        it should contain the drink.long() data representation
-    returns status code 200 and json {"success": True, "drinks": drink} where drink an array containing only the updated drink
-        or appropriate status code indicating reason for failure
-'''
 @app.route('/drinks/<int:id>', methods=['PATCH'])
-def update_drink(id):
+@requires_auth('patch:drinks')
+def update_drink(payload, id):
 	props = request.get_json()
 	drink = Drink.query.get_or_404(id)
 	drink.title = props['title']
@@ -89,18 +63,9 @@ def update_drink(id):
 		'drinks': [drink.long()]
 	})
 
-'''
-@TODO implement endpoint
-    DELETE /drinks/<id>
-        where <id> is the existing model id
-        it should respond with a 404 error if <id> is not found
-        it should delete the corresponding row for <id>
-        it should require the 'delete:drinks' permission
-    returns status code 200 and json {"success": True, "delete": id} where id is the id of the deleted record
-        or appropriate status code indicating reason for failure
-'''
 @app.route('/drinks/<int:id>', methods=['DELETE'])
-def delete_drink(id):
+@requires_auth('delete:drinks')
+def delete_drink(payload, id):
 	drink = Drink.query.get_or_404(id)
 	drink.delete()
 
@@ -109,36 +74,23 @@ def delete_drink(id):
 		'delete': id
 	})
 
-# Error Handling
-'''
-Example error handling for unprocessable entity
-'''
+@app.errorhandler(Exception)
+def handle_error(e):
+	status_code = 500
+	message = str(e)
+	code = None
 
+	if isinstance(e, HTTPException):
+		status_code = e.code
+	
+	if isinstance(e, AuthError):
+		status_code = e.status_code
+		code = e.error['code']
+		message = e.error['description']
 
-@app.errorhandler(422)
-def unprocessable(error):
 	return jsonify({
-		"success": False,
-		"error": 422,
-		"message": "unprocessable"
-	}), 422
-
-
-@app.errorhandler(HTTPException)
-def handle_exception(e):
-	"""Return JSON instead of HTML for HTTP errors."""
-	# start with the correct headers and status code from the error
-	response = e.get_response()
-	# replace the body with JSON
-	response.data = json.dumps({
-		"success": False,
-		"error": e.code,
-		"message": e.description,
-	})
-	response.content_type = "application/json"
-	return response
-
-'''
-@TODO implement error handler for AuthError
-    error handler should conform to general task above
-'''
+		'success': False,
+		'error': status_code,
+		'code': code,
+		'message': message,
+	}), status_code
